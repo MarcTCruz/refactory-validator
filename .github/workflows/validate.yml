@@ -1,0 +1,36 @@
+name: Validate Solutions
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install quickjs-emscripten
+
+      - name: Scan forks and grade
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node .github/scripts/validate.js
+
+      - name: Commit results
+        run: |
+          git config user.name "Refactory CI"
+          git config user.email "ci@refactory.dev"
+          git add results/ _meta/
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "Update verification results [skip ci]"
+          git push
