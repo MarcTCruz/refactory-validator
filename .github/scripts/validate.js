@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { getQuickJS } from 'quickjs-emscripten';
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from 'fs';
+import { createHash } from 'crypto';
 import { join } from 'path';
 
 const REPO = 'MarcTCruz/refactory-validator';
@@ -121,8 +122,9 @@ async function main() {
       if (!code) continue;
 
       const testDef = JSON.parse(readFileSync(testPath, 'utf-8'));
+      const solutionHash = `sha256:${createHash('sha256').update(code).digest('hex')}`;
       const status = await gradeExercise(QuickJS, code, testDef);
-      exercises[exerciseId] = { status, verified_at: new Date().toISOString() };
+      exercises[exerciseId] = { status, verified_at: new Date().toISOString(), solutionHash };
     }
 
     if (Object.keys(exercises).length > 0) {
