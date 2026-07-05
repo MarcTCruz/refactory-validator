@@ -3,6 +3,7 @@ import { getQuickJS } from 'quickjs-emscripten';
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from 'fs';
 import { createHash } from 'crypto';
 import { join } from 'path';
+import { pathToFileURL } from 'url';
 
 const REPO = 'MarcTCruz/refactory-validator';
 
@@ -58,7 +59,7 @@ async function fetchSolution(owner, exerciseId) {
   return res.text();
 }
 
-async function gradeExercise(QuickJS, code, testDef) {
+export async function gradeExercise(QuickJS, code, testDef) {
   const vm = QuickJS.newContext();
   try {
     const defineResult = vm.evalCode(code);
@@ -138,4 +139,7 @@ async function main() {
   writeFileSync(metaPath, JSON.stringify({ last_run_at: new Date().toISOString() }, null, 2));
 }
 
-main().catch(err => { console.error(err); process.exit(1); });
+// Run the fork-scan only when executed directly (node validate.js), not when
+// gradeExercise is imported by the trainer's sandbox-parity check.
+const isDirectRun = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isDirectRun) main().catch(err => { console.error(err); process.exit(1); });
